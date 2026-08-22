@@ -30,6 +30,28 @@ local DISK_COLORS = {
     [5] = {0.55, 0.20, 0.70}, -- roxo
 }
 
+-- ======================= DADOS DA TELA DE CRÉDITOS =======================
+-- Troque `avatar` pelo caminho da imagem de cada pessoa (ex: "assets/dayvson.png").
+-- Se `avatar` for nil, um círculo cinza é desenhado no lugar (placeholder).
+local CREDITS_PEOPLE = {
+    {
+        name   = "Dayvson Lacerda Pessoa Filho",
+        github = "https://github.com/Devs097518",
+        avatar = "assets/dayvson.png",
+    },
+    {
+        name   = "Yuri William Ferreira Calixto",
+        github = "https://github.com/YuriCeleste",
+        avatar = "assets/yuri.png",
+    },
+}
+
+-- Troque `icon` pelo caminho do ícone de cada tecnologia (ex: "assets/lua-icon.png").
+local CREDITS_TECH = {
+    { name = "Lua",    icon = "assets/lua-icon.png" },
+    { name = "Love2d", icon = "assets/love2d-icon.png" },
+}
+
 -- ======================= ESTADO =======================
 local state = {
     numDisks     = 4,
@@ -41,6 +63,7 @@ local state = {
     minMoves     = 0,
     solved       = false,
     showTutorial = false,
+    showCredits  = false,
 
     -- auto-resolver (animação da solução recursiva)
     autoSolving  = false,
@@ -138,12 +161,32 @@ end
 
 -- ======================= LÖVE CALLBACKS =======================
 
+-- Tenta carregar uma imagem; se o arquivo não existir ainda, retorna nil
+-- em vez de travar o jogo (assim dá pra rodar antes de colocar os assets).
+local function tryLoadImage(path)
+    if not path then return nil end
+    local ok, img = pcall(love.graphics.newImage, path)
+    if ok then return img end
+    return nil
+end
+
 function love.load()
     love.graphics.setBackgroundColor(1, 1, 1)
     fontTitle  = love.graphics.newFont(24)
     fontLabel  = love.graphics.newFont(16)
     fontSmall  = love.graphics.newFont(13)
     fontButton = love.graphics.newFont(17)
+
+    -- Carrega as imagens de avatar/ícones definidas em CREDITS_PEOPLE e
+    -- CREDITS_TECH. Basta colocar o caminho do arquivo nos campos
+    -- `avatar` / `icon` lá em cima que elas aparecem aqui automaticamente.
+    for _, person in ipairs(CREDITS_PEOPLE) do
+        person.avatarImage = tryLoadImage(person.avatar)
+    end
+    for _, tech in ipairs(CREDITS_TECH) do
+        tech.iconImage = tryLoadImage(tech.icon)
+    end
+
     resetGame(state.numDisks)
 end
 
@@ -214,22 +257,23 @@ local function drawSidebar()
     love.graphics.printf("Ao trocar de opção o jogo reinicia", 34, 165, 230, "left")
 
     -- Botões
-    drawButton(20, 210, 260, 42, "Tutorial")
-    drawButton(20, 264, 260, 42, "Reiniciar")
-    drawButton(20, 318, 260, 42, "Auto-resolver", not state.autoSolving)
+    drawButton(20, 208, 260, 38, "Tutorial")
+    drawButton(20, 250, 260, 38, "Reiniciar")
+    drawButton(20, 292, 260, 38, "Auto-resolver", not state.autoSolving)
+    drawButton(20, 334, 260, 38, "Créditos")
 
     -- Info de movimentos mínimos
     love.graphics.setColor(unpack(COLOR_WHITE))
     love.graphics.setFont(fontSmall)
     love.graphics.printf(
         "Mínimo possível: " .. state.minMoves .. " movimentos",
-        20, 380, 260, "left"
+        20, 384, 260, "left"
     )
 
     if state.solved then
         love.graphics.setColor(0.6, 1, 0.6)
         love.graphics.setFont(fontLabel)
-        love.graphics.printf("Resolvido! 🎉", 20, 410, 260, "left")
+        love.graphics.printf("Resolvido! 🎉", 20, 408, 260, "left")
     end
 end
 
@@ -316,10 +360,131 @@ local function drawTutorial()
     love.graphics.printf("(clique fora da caixa para fechar)", boxX, boxY + boxH - 30, boxW, "center")
 end
 
+-- Desenha uma "pílula" (retângulo bem arredondado) com borda, usada no
+-- botão de topo e nos blocos cinza do card de créditos.
+local function drawPill(x, y, w, h, fillColor, borderColor)
+    love.graphics.setColor(unpack(fillColor))
+    love.graphics.rectangle("fill", x, y, w, h, h / 2, h / 2)
+    if borderColor then
+        love.graphics.setColor(unpack(borderColor))
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", x, y, w, h, h / 2, h / 2)
+        love.graphics.setLineWidth(1)
+    end
+end
+
+-- Desenha um avatar circular. Se `image` existir, recorta/escala a
+-- imagem dentro do círculo; senão desenha um círculo cinza de placeholder.
+local function drawAvatarCircle(image, cx, cy, radius)
+    if image then
+        local iw, ih = image:getDimensions()
+        local scale = (radius * 2) / math.min(iw, ih)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.stencil(function()
+            love.graphics.circle("fill", cx, cy, radius)
+        end, "replace", 1)
+        love.graphics.setStencilTest("greater", 0)
+        love.graphics.draw(image, cx - (iw * scale) / 2, cy - (ih * scale) / 2, 0, scale, scale)
+        love.graphics.setStencilTest()
+    else
+        love.graphics.setColor(0.85, 0.85, 0.88)
+        love.graphics.circle("fill", cx, cy, radius)
+        love.graphics.setColor(0.6, 0.6, 0.65)
+        love.graphics.setLineWidth(2)
+        love.graphics.circle("line", cx, cy, radius)
+        love.graphics.setLineWidth(1)
+    end
+end
+
+local function drawCredits()
+    if not state.showCredits then return end
+
+    -- fundo escurecido
+    love.graphics.setColor(0, 0, 0, 0.5)
+    love.graphics.rectangle("fill", 0, 0, 960, 480)
+
+    -- card branco (mesmas proporções do protótipo)
+    local boxX, boxY, boxW, boxH = 260, 20, 440, 440
+    love.graphics.setColor(unpack(COLOR_WHITE))
+    love.graphics.rectangle("fill", boxX, boxY, boxW, boxH, 22, 22)
+    love.graphics.setColor(0.15, 0.15, 0.15)
+    love.graphics.setLineWidth(3)
+    love.graphics.rectangle("line", boxX, boxY, boxW, boxH, 22, 22)
+    love.graphics.setLineWidth(1)
+
+    -- seta de voltar (topo esquerdo)
+    love.graphics.setColor(0.1, 0.1, 0.1)
+    love.graphics.setFont(fontTitle)
+    love.graphics.print("<-", boxX + 20, boxY + 16)
+
+    -- pílula "Créditos"
+    drawPill(boxX + 70, boxY + 16, boxW - 140, 38, {0.85, 0.85, 0.85}, {0.2, 0.55, 0.9})
+    love.graphics.setColor(0.1, 0.2, 0.8)
+    love.graphics.setFont(fontLabel)
+    love.graphics.printf("Créditos", boxX + 70, boxY + 26, boxW - 140, "center")
+
+    local y = boxY + 80
+
+    -- ----- pessoas -----
+    for _, person in ipairs(CREDITS_PEOPLE) do
+        local avatarCx, avatarCy, avatarR = boxX + 55, y + 35, 32
+        drawAvatarCircle(person.avatarImage, avatarCx, avatarCy, avatarR)
+
+        love.graphics.setColor(0.1, 0.2, 0.8)
+        love.graphics.setFont(fontLabel)
+        love.graphics.printf(person.name, boxX + 100, y, boxW - 130, "left")
+
+        -- pílula com o link do github
+        local pillX, pillY, pillW, pillH = boxX + 100, y + 24, boxW - 130, 46
+        drawPill(pillX, pillY, pillW, pillH, {0.85, 0.85, 0.85}, nil)
+        love.graphics.setColor(0.1, 0.2, 0.8)
+        love.graphics.setFont(fontSmall)
+        love.graphics.printf(person.github, pillX + 34, pillY + 6, pillW - 44, "left")
+        -- "ícone" simples do github (círculo escuro) à esquerda da pílula
+        love.graphics.setColor(0.15, 0.15, 0.15)
+        love.graphics.circle("fill", pillX + 16, pillY + pillH / 2, 8)
+
+        y = y + 90
+        love.graphics.setColor(0.7, 0.7, 0.7)
+        love.graphics.line(boxX + 20, y - 12, boxX + boxW - 20, y - 12)
+    end
+
+    y = y + 6
+
+    -- ----- tecnologias usadas -----
+    local techBoxH = 30 + (#CREDITS_TECH * 42)
+    drawPill(boxX + 20, y, boxW - 40, techBoxH, {0.88, 0.88, 0.88}, nil)
+
+    love.graphics.setColor(0.1, 0.2, 0.8)
+    love.graphics.setFont(fontLabel)
+    love.graphics.print("tecnologias usadas", boxX + 40, y + 10)
+
+    local techY = y + 44
+    for _, tech in ipairs(CREDITS_TECH) do
+        local iconCx, iconCy = boxX + 55, techY + 12
+        if tech.iconImage then
+            local iw, ih = tech.iconImage:getDimensions()
+            local scale = 26 / math.max(iw, ih)
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.draw(tech.iconImage, iconCx - (iw * scale) / 2, iconCy - (ih * scale) / 2, 0, scale, scale)
+        else
+            love.graphics.setColor(0.6, 0.6, 0.9)
+            love.graphics.circle("fill", iconCx, iconCy, 13)
+        end
+        love.graphics.setColor(0.1, 0.2, 0.8)
+        love.graphics.setFont(fontLabel)
+        love.graphics.print(tech.name, boxX + 76, techY)
+        love.graphics.setColor(0.6, 0.6, 0.6)
+        love.graphics.line(boxX + 40, techY + 30, boxX + boxW - 40, techY + 30)
+        techY = techY + 42
+    end
+end
+
 function love.draw()
     drawSidebar()
     drawBoard()
     drawTutorial()
+    drawCredits()
 end
 
 -- ------------------- INTERAÇÃO (MOUSE) -------------------
@@ -330,6 +495,20 @@ end
 
 function love.mousepressed(x, y, button)
     if button ~= 1 then return end
+
+    -- Se a tela de créditos estiver aberta: só a seta de voltar (ou
+    -- clicar fora do card) fecha. Bloqueia o resto do jogo enquanto aberta.
+    if state.showCredits then
+        local boxX, boxY, boxW = 260, 20, 440
+        if pointInRect(x, y, boxX + 15, boxY + 10, 40, 30) then
+            state.showCredits = false
+            return
+        end
+        if not pointInRect(x, y, boxX, boxY, boxW, 440) then
+            state.showCredits = false
+        end
+        return
+    end
 
     -- Se o tutorial estiver aberto, qualquer clique fecha
     if state.showTutorial then
@@ -345,16 +524,20 @@ function love.mousepressed(x, y, button)
     end
 
     -- Botões
-    if pointInRect(x, y, 20, 210, 260, 42) then
+    if pointInRect(x, y, 20, 208, 260, 38) then
         state.showTutorial = true
         return
     end
-    if pointInRect(x, y, 20, 264, 260, 42) then
+    if pointInRect(x, y, 20, 250, 260, 38) then
         resetGame(state.numDisks)
         return
     end
-    if pointInRect(x, y, 20, 318, 260, 42) and not state.autoSolving then
+    if pointInRect(x, y, 20, 292, 260, 38) and not state.autoSolving then
         startAutoSolve()
+        return
+    end
+    if pointInRect(x, y, 20, 334, 260, 38) then
+        state.showCredits = true
         return
     end
 
