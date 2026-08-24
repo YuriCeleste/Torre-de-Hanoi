@@ -3,7 +3,7 @@
     -----------------
     Dados exibidos na tela de créditos: integrantes da equipe e
     tecnologias usadas. Pra trocar foto/ícone, basta editar os campos
-    `avatar` / `icon` abaixo com o caminho do arquivo dentro de assets/.
+    `avatar` / `icon` abaixo com o caminho do arquivo dentro de images/.
 
     Se um caminho estiver errado ou o arquivo não existir, o jogo não
     trava: CreditsData.loadImages() simplesmente deixa a imagem como
@@ -16,22 +16,22 @@ CreditsData.people = {
     {
         name   = "Dayvson Lacerda Pessoa Filho",
         github = "https://github.com/Devs097518",
-        avatar = "assets/dayvson.png",
+        avatar = "images/dayvson.png",
     },
     {
         name   = "Yuri William Ferreira Calixto",
         github = "https://github.com/YuriCeleste",
-        avatar = "assets/yuri.png",
+        avatar = "images/yuri.png",
     },
 }
 
 CreditsData.tech = {
-    { name = "Lua",    icon = "assets/lua-icon.png" },
-    { name = "Love2d", icon = "assets/love2d-icon.png" },
+    { name = "Lua",    icon = "images/lua-icon.png" },
+    { name = "Love2d", icon = "images/love2d-icon.png" },
 }
 
 -- Tenta carregar uma imagem; se o arquivo não existir ainda, retorna nil
--- em vez de travar o jogo (assim dá pra rodar antes de colocar os assets).
+-- em vez de travar o jogo (assim dá pra rodar antes de colocar os images).
 local function tryLoadImage(path)
     if not path then return nil end
     local ok, img = pcall(love.graphics.newImage, path)

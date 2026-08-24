@@ -38,11 +38,11 @@ Jogo da Torre de Hanói feito em Lua com o framework [LÖVE2D](https://love2d.or
 O botão **"Créditos"** na barra lateral abre um card com sua foto, a do
 Yuri e os ícones das tecnologias. Pra colocar as imagens:
 
-1. Coloque os arquivos dentro da pasta `assets/` (já criada), por exemplo:
-   - `assets/dayvson.png`
-   - `assets/yuri.png`
-   - `assets/lua-icon.png`
-   - `assets/love2d-icon.png`
+1. Coloque os arquivos dentro da pasta `images/` (já criada), por exemplo:
+   - `images/dayvson.png`
+   - `images/yuri.png`
+   - `images/lua-icon.png`
+   - `images/love2d-icon.png`
 2. Abra `main.lua` e procure o bloco `CREDITS_PEOPLE` e `CREDITS_TECH`
    (perto do topo do arquivo, logo após `DISK_COLORS`). Preencha os
    campos `avatar` e `icon` com o caminho de cada arquivo:
@@ -52,24 +52,24 @@ Yuri e os ícones das tecnologias. Pra colocar as imagens:
        {
            name   = "Dayvson Lacerda Pessoa Filho",
            github = "https://github.com/Devs097518",
-           avatar = "assets/dayvson.png",
+           avatar = "images/dayvson.png",
        },
        {
            name   = "Yuri William Ferreira Calixto",
            github = "https://github.com/YuriCeleste",
-           avatar = "assets/yuri.png",
+           avatar = "images/yuri.png",
        },
    }
 
    local CREDITS_TECH = {
-       { name = "Lua",    icon = "assets/lua-icon.png" },
-       { name = "Love2d", icon = "assets/love2d-icon.png" },
+       { name = "Lua",    icon = "images/lua-icon.png" },
+       { name = "Love2d", icon = "images/love2d-icon.png" },
    }
    ```
 
 Se um caminho estiver errado ou o arquivo não existir, o jogo não trava —
 ele simplesmente desenha um círculo cinza no lugar da imagem, então dá
-pra testar antes de ter todos os assets prontos.
+pra testar antes de ter todos os images prontos.
 
 ## A recursão
 
